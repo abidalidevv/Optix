@@ -1,22 +1,41 @@
 import React, { useState, useMemo } from 'react';
-import { Search, AlertCircle, Eye, Image as ImageIcon, RotateCcw, Check } from 'lucide-react';
+import { Search, AlertCircle, Eye, RotateCcw, Check, Sparkles, Edit2, Save, X } from 'lucide-react';
 import type { ImageAuditItem } from '../types';
 import { optixApi } from '../api';
 
 interface ImageTableProps {
   images: ImageAuditItem[];
   onCompareImage: (image: ImageAuditItem) => void;
+  onRefresh?: () => void;
 }
 
-export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage }) => {
+export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage, onRefresh }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFormat, setSelectedFormat] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [heavyOnly, setHeavyOnly] = useState(false);
+  const [altFilter, setAltFilter] = useState<'all' | 'dummy' | 'optimized'>('all');
   const [sortBy, setSortBy] = useState<'size' | 'savings' | 'name'>('size');
   const [page, setPage] = useState(1);
   const [restoredImages, setRestoredImages] = useState<Set<string>>(new Set());
+
+  // Alt Text Management State
+  const [altOverrides, setAltOverrides] = useState<Record<string, string>>({});
+  const [editingFilename, setEditingFilename] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
+  const [isBatchOptimizingAlt, setIsBatchOptimizingAlt] = useState<boolean>(false);
+  const [altBannerMessage, setAltBannerMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const pageSize = 15;
+
+  // Helper to determine if an alt tag is dummy or missing
+  const isDummyAlt = (alt?: string, filename?: string) => {
+    if (!alt || !alt.trim()) return true;
+    const clean = alt.trim().toLowerCase();
+    if (/^\d+[\s\-_]*(tibbe[\s\-_]*shifa)?$/.test(clean)) return true;
+    if (filename && (clean === filename.toLowerCase() || clean === filename.split('.')[0].toLowerCase())) return true;
+    if (/\.(png|jpg|jpeg|webp|avif|gif)$/i.test(clean)) return true;
+    return false;
+  };
 
   const handleRowRestore = async (filename: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -28,11 +47,78 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage }
     }
   };
 
+  // 1-Click Batch Auto-Generate SEO Alt Tags for All Images
+  const handleBatchOptimizeAlt = async () => {
+    try {
+      setIsBatchOptimizingAlt(true);
+      setAltBannerMessage(null);
+      const res = await optixApi.optimizeAllAltTexts();
+      
+      // Update local state overrides
+      const updatedMap: Record<string, string> = {};
+      for (const img of images) {
+        const s = await optixApi.suggestAltText(img.filename, img.category);
+        if (s?.suggested_alt) {
+          updatedMap[img.filename] = s.suggested_alt;
+        }
+      }
+      setAltOverrides(prev => ({ ...prev, ...updatedMap }));
+      setAltBannerMessage({
+        type: 'success',
+        text: `✓ Successfully generated high-ranking Google SEO Alt Tags for ${res.optimized_count || images.length} images!`
+      });
+      if (onRefresh) onRefresh();
+    } catch (err: any) {
+      setAltBannerMessage({
+        type: 'error',
+        text: 'Failed to auto-generate alt texts: ' + (err.message || 'Error')
+      });
+    } finally {
+      setIsBatchOptimizingAlt(false);
+    }
+  };
+
+  // Quick 1-Image AI Suggestion
+  const handleQuickSuggest = async (filename: string, category: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const res = await optixApi.suggestAltText(filename, category);
+      if (res?.suggested_alt) {
+        await optixApi.updateAltText(filename, res.suggested_alt);
+        setAltOverrides(prev => ({ ...prev, [filename]: res.suggested_alt }));
+      }
+    } catch (err) {
+      console.error('Failed to suggest alt text:', err);
+    }
+  };
+
+  // Save Inline Edit
+  const handleSaveInlineAlt = async (filename: string) => {
+    if (!editValue.trim()) return;
+    try {
+      await optixApi.updateAltText(filename, editValue.trim());
+      setAltOverrides(prev => ({ ...prev, [filename]: editValue.trim() }));
+      setEditingFilename(null);
+    } catch (err) {
+      console.error('Failed to save alt text:', err);
+    }
+  };
+
+  // Calculate dummy count
+  const dummyAltCount = useMemo(() => {
+    return images.filter(img => isDummyAlt(altOverrides[img.filename] ?? img.alt_text, img.filename)).length;
+  }, [images, altOverrides]);
+
   // Filter & Sort Logic
   const filteredImages = useMemo(() => {
     return images.filter(img => {
-      if (searchTerm && !img.filename.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false;
+      const currentAlt = altOverrides[img.filename] ?? img.alt_text;
+      
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        const matchName = img.filename.toLowerCase().includes(term);
+        const matchAlt = (currentAlt || '').toLowerCase().includes(term);
+        if (!matchName && !matchAlt) return false;
       }
       if (selectedFormat !== 'all') {
         const ext = img.filename.split('.').pop()?.toLowerCase();
@@ -47,6 +133,12 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage }
       if (heavyOnly && !img.is_heavy) {
         return false;
       }
+      if (altFilter === 'dummy' && !isDummyAlt(currentAlt, img.filename)) {
+        return false;
+      }
+      if (altFilter === 'optimized' && isDummyAlt(currentAlt, img.filename)) {
+        return false;
+      }
       return true;
     }).sort((a, b) => {
       if (sortBy === 'size') {
@@ -57,7 +149,7 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage }
         return a.filename.localeCompare(b.filename);
       }
     });
-  }, [images, searchTerm, selectedFormat, selectedCategory, heavyOnly, sortBy]);
+  }, [images, searchTerm, selectedFormat, selectedCategory, heavyOnly, altFilter, sortBy, altOverrides]);
 
   const totalPages = Math.ceil(filteredImages.length / pageSize) || 1;
   const paginatedImages = filteredImages.slice((page - 1) * pageSize, page * pageSize);
@@ -89,12 +181,52 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage }
             Store Media Assets &bull; Universal Catalog
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--fg-secondary)' }}>
-          <span>{images.length} Files Total</span>
-          <span>&bull;</span>
-          <span>{filteredImages.length} Matches</span>
+
+        {/* 1-Click SEO Alt-Text Batch Optimizer Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            onClick={handleBatchOptimizeAlt}
+            disabled={isBatchOptimizingAlt}
+            className="btn btn-green"
+            style={{ padding: '7px 14px', fontSize: '12.5px' }}
+            title="Auto-generate Google SEO alt text for all images with missing or dummy alt tags"
+          >
+            <Sparkles size={14} />
+            {isBatchOptimizingAlt
+              ? 'Generating SEO Alt Tags...'
+              : `Auto-Generate SEO Alt Tags (${dummyAltCount} Dummy Detected)`}
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--fg-secondary)' }}>
+            <span>{images.length} Files Total</span>
+            <span>&bull;</span>
+            <span>{filteredImages.length} Matches</span>
+          </div>
         </div>
       </div>
+
+      {/* Notification Banner */}
+      {altBannerMessage && (
+        <div style={{
+          padding: '10px 18px',
+          background: altBannerMessage.type === 'success' ? '#e4f8f0' : '#fef2f2',
+          borderBottom: `1px solid ${altBannerMessage.type === 'success' ? '#a7f3d0' : '#fecaca'}`,
+          color: altBannerMessage.type === 'success' ? '#008060' : '#dc2626',
+          fontSize: '12px',
+          fontFamily: 'JetBrains Mono, monospace',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <span>{altBannerMessage.text}</span>
+          <button
+            onClick={() => setAltBannerMessage(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 'bold' }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Filter and Search Bar (Crush.pics Style Search) */}
       <div style={{
@@ -176,6 +308,24 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage }
             <option value="theme-assets">Theme Assets</option>
           </select>
 
+          {/* SEO Alt Text Status Filter */}
+          <select
+            value={altFilter}
+            onChange={(e) => { setAltFilter(e.target.value as any); setPage(1); }}
+            style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-hairline)',
+              color: 'var(--fg-primary)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '6px 10px',
+              outline: 'none'
+            }}
+          >
+            <option value="all">All Alt Tags</option>
+            <option value="dummy">Dummy / Missing ({dummyAltCount})</option>
+            <option value="optimized">SEO Optimized</option>
+          </select>
+
           <button
             onClick={() => { setHeavyOnly(!heavyOnly); setPage(1); }}
             className={`btn ${heavyOnly ? 'badge-rose' : 'btn-secondary'}`}
@@ -197,145 +347,239 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage }
               outline: 'none'
             }}
           >
-            <option value="size">Largest Size First</option>
-            <option value="savings">Highest Savings First</option>
-            <option value="name">Filename A-Z</option>
+            <option value="size">Sort: Heaviest First</option>
+            <option value="savings">Sort: Highest Savings %</option>
+            <option value="name">Sort: Filename</option>
           </select>
         </div>
       </div>
 
-      {/* Crush.pics Style Media Table */}
+      {/* Images Table */}
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px', fontFamily: 'JetBrains Mono, monospace' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
           <thead>
-            <tr style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-hairline)', color: 'var(--fg-secondary)' }}>
-              <th style={{ padding: '10px 16px', fontWeight: 600 }}>FILE</th>
-              <th style={{ padding: '10px 16px', fontWeight: 600 }}>ALT TEXT</th>
-              <th style={{ padding: '10px 16px', fontWeight: 600 }}>ORIGINAL SIZE</th>
-              <th style={{ padding: '10px 16px', fontWeight: 600 }}>OPTIMIZED (AVIF)</th>
-              <th style={{ padding: '10px 16px', fontWeight: 600 }}>SAVINGS</th>
-              <th style={{ padding: '10px 16px', fontWeight: 600, textAlign: 'right' }}>ACTION</th>
+            <tr style={{
+              background: 'var(--bg-subtle)',
+              borderBottom: '1px solid var(--border-hairline)',
+              color: 'var(--fg-secondary)',
+              fontSize: '11px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              fontFamily: 'JetBrains Mono, monospace'
+            }}>
+              <th style={{ padding: '12px 18px' }}>Asset &bull; Resolution</th>
+              <th style={{ padding: '12px 16px', minWidth: '220px' }}>SEO Alt Tag (Google Ranking)</th>
+              <th style={{ padding: '12px 16px' }}>Original</th>
+              <th style={{ padding: '12px 16px' }}>AVIF (Projected)</th>
+              <th style={{ padding: '12px 16px' }}>Savings</th>
+              <th style={{ padding: '12px 18px', textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {paginatedImages.map((img) => (
-              <tr key={img.id} style={{ borderBottom: '1px solid var(--border-subdued)', transition: 'background 0.15s' }}>
-                
-                {/* File Column (Crush.pics Style with Thumbnail + Format tag under name) */}
-                <td style={{ padding: '12px 16px', fontFamily: 'Geist, sans-serif' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {/* Thumbnail */}
-                    <div style={{
-                      width: '42px',
-                      height: '42px',
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'var(--bg-subtle)',
-                      border: '1px solid var(--border-hairline)',
-                      overflow: 'hidden',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}>
-                      {img.url ? (
+            {paginatedImages.map((img) => {
+              const currentAlt = altOverrides[img.filename] ?? img.alt_text;
+              const isDummy = isDummyAlt(currentAlt, img.filename);
+              const isEditing = editingFilename === img.filename;
+
+              return (
+                <tr
+                  key={img.id}
+                  style={{
+                    borderBottom: '1px solid var(--border-subdued)',
+                    transition: 'background 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  {/* Asset Column */}
+                  <td style={{ padding: '12px 18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: 'var(--radius-sm)',
+                        background: '#09090b',
+                        border: '1px solid var(--border-hairline)',
+                        overflow: 'hidden',
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
                         <img
-                          src={img.url}
-                          alt={img.alt_text || img.filename}
+                          src={optixApi.getImagePreviewUrl(img.filename, 'original', img.id)}
+                          alt={currentAlt || img.filename}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           onError={(e) => {
                             (e.target as HTMLElement).style.display = 'none';
                           }}
                         />
-                      ) : (
-                        <ImageIcon size={18} color="var(--fg-muted)" />
-                      )}
-                    </div>
+                      </div>
 
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: 'var(--fg-primary)' }}>
-                        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '12px' }}>
-                          {img.filename}
-                        </span>
-                        {img.is_heavy && (
-                          <span className="container-badge badge-rose" style={{ fontSize: '9px', padding: '1px 4px' }}>
-                            HEAVY
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: 'var(--fg-primary)' }}>
+                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '12px' }}>
+                            {img.filename}
                           </span>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
-                        {getFormatBadge(img.filename)}
-                        <span style={{ fontSize: '11px', color: 'var(--fg-secondary)', fontFamily: 'JetBrains Mono, monospace' }}>
-                          {img.dimensions || '1200x1200'} &bull; {img.category}
-                        </span>
+                          {img.is_heavy && (
+                            <span className="container-badge badge-rose" style={{ fontSize: '9px', padding: '1px 4px' }}>
+                              HEAVY
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
+                          {getFormatBadge(img.filename)}
+                          <span style={{ fontSize: '11px', color: 'var(--fg-secondary)', fontFamily: 'JetBrains Mono, monospace' }}>
+                            {img.dimensions || '1200x1200'} &bull; {img.category}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </td>
+                  </td>
 
-                {/* Alt Text Column (Crush.pics Style) */}
-                <td style={{ padding: '12px 16px', color: 'var(--fg-secondary)', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {img.alt_text ? (
-                    <span style={{ color: 'var(--fg-primary)' }}>{img.alt_text}</span>
-                  ) : (
-                    <span style={{ color: 'var(--fg-muted)' }}>—</span>
-                  )}
-                </td>
+                  {/* SEO Alt Text Column (Interactive Inline AI Engine) */}
+                  <td style={{ padding: '12px 16px', maxWidth: '260px' }}>
+                    {isEditing ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <input
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleSaveInlineAlt(img.filename); }}
+                          autoFocus
+                          style={{
+                            width: '100%',
+                            background: 'var(--bg-subtle)',
+                            border: '1px solid var(--p-green)',
+                            borderRadius: 'var(--radius-sm)',
+                            padding: '4px 8px',
+                            fontSize: '11.5px',
+                            fontFamily: 'JetBrains Mono, monospace',
+                            color: 'var(--fg-primary)',
+                            outline: 'none'
+                          }}
+                        />
+                        <button
+                          onClick={() => handleSaveInlineAlt(img.filename)}
+                          className="btn btn-green"
+                          style={{ padding: '4px 6px', fontSize: '10px' }}
+                          title="Save Alt Text"
+                        >
+                          <Save size={11} />
+                        </button>
+                        <button
+                          onClick={() => setEditingFilename(null)}
+                          className="btn btn-secondary"
+                          style={{ padding: '4px 6px', fontSize: '10px' }}
+                          title="Cancel"
+                        >
+                          <X size={11} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11.5px' }}>
+                          {isDummy ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                              <span style={{
+                                background: '#fef3c7',
+                                color: '#92400e',
+                                border: '1px solid #fde68a',
+                                borderRadius: '3px',
+                                padding: '1px 5px',
+                                fontSize: '9px',
+                                fontWeight: 700,
+                                fontFamily: 'JetBrains Mono, monospace'
+                              }}>
+                                DUMMY
+                              </span>
+                              <span style={{ color: 'var(--fg-muted)' }}>{currentAlt || 'Missing Alt Text'}</span>
+                            </span>
+                          ) : (
+                            <span style={{ color: 'var(--fg-primary)', fontWeight: 500 }} title={currentAlt}>
+                              {currentAlt}
+                            </span>
+                          )}
+                        </div>
 
-                {/* Original Size Column */}
-                <td style={{ padding: '12px 16px', color: 'var(--fg-secondary)' }}>
-                  <span style={{ color: img.is_heavy ? 'var(--tint-rose-text)' : 'inherit', fontWeight: img.is_heavy ? 700 : 500 }}>
-                    {img.original_size_kb >= 1024
-                      ? `${(img.original_size_kb / 1024).toFixed(2)} MB`
-                      : `${img.original_size_kb.toLocaleString()} KB`}
-                  </span>
-                </td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
+                          <button
+                            onClick={(e) => handleQuickSuggest(img.filename, img.category, e)}
+                            className="btn btn-secondary"
+                            style={{ padding: '3px 6px', fontSize: '10px' }}
+                            title="AI Auto-Generate SEO Alt Tag for this image"
+                          >
+                            <Sparkles size={11} color="#008060" />
+                          </button>
+                          <button
+                            onClick={() => { setEditingFilename(img.filename); setEditValue(currentAlt || ''); }}
+                            className="btn btn-secondary"
+                            style={{ padding: '3px 6px', fontSize: '10px' }}
+                            title="Edit Alt Text"
+                          >
+                            <Edit2 size={11} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </td>
 
-                {/* Converted AVIF Column */}
-                <td style={{ padding: '12px 16px', color: 'var(--tint-emerald-text)', fontWeight: 700 }}>
-                  {img.estimated_avif_kb >= 1024
-                    ? `${(img.estimated_avif_kb / 1024).toFixed(2)} MB`
-                    : `${img.estimated_avif_kb.toLocaleString()} KB`}{' '}
-                  <span style={{ fontSize: '10px', color: 'var(--fg-secondary)', fontWeight: 400 }}>AVIF</span>
-                </td>
+                  {/* Original Size Column */}
+                  <td style={{ padding: '12px 16px', color: 'var(--fg-secondary)' }}>
+                    <span style={{ color: img.is_heavy ? 'var(--tint-rose-text)' : 'inherit', fontWeight: img.is_heavy ? 700 : 500 }}>
+                      {img.original_size_kb >= 1024
+                        ? `${(img.original_size_kb / 1024).toFixed(2)} MB`
+                        : `${img.original_size_kb.toLocaleString()} KB`}
+                    </span>
+                  </td>
 
-                {/* Savings Column */}
-                <td style={{ padding: '12px 16px' }}>
-                  <span className="container-badge badge-emerald" style={{ fontWeight: 700 }}>
-                    -{img.estimated_savings_pct}%
-                  </span>
-                </td>
+                  {/* Converted AVIF Column */}
+                  <td style={{ padding: '12px 16px', color: 'var(--tint-emerald-text)', fontWeight: 700 }}>
+                    {img.estimated_avif_kb >= 1024
+                      ? `${(img.estimated_avif_kb / 1024).toFixed(2)} MB`
+                      : `${img.estimated_avif_kb.toLocaleString()} KB`}{' '}
+                    <span style={{ fontSize: '10px', color: 'var(--fg-secondary)', fontWeight: 400 }}>AVIF</span>
+                  </td>
 
-                {/* Action Column */}
-                <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
-                    <button
-                      onClick={() => onCompareImage(img)}
-                      className="btn btn-secondary"
-                      style={{ padding: '5px 10px', fontSize: '11px' }}
-                      title="Inspect side-by-side with optical slider"
-                    >
-                      <Eye size={12} color="#008060" />
-                      Inspect ⟷
-                    </button>
-                    <button
-                      onClick={(e) => handleRowRestore(img.filename, e)}
-                      disabled={restoredImages.has(img.filename)}
-                      className="btn btn-secondary"
-                      style={{
-                        padding: '5px 8px',
-                        fontSize: '11px',
-                        color: restoredImages.has(img.filename) ? '#008060' : 'var(--fg-secondary)',
-                        borderColor: restoredImages.has(img.filename) ? '#a7f3d0' : undefined
-                      }}
-                      title="Revert this individual image back to original uncompressed asset"
-                    >
-                      {restoredImages.has(img.filename) ? <Check size={12} /> : <RotateCcw size={12} />}
-                      {restoredImages.has(img.filename) ? 'Restored' : 'Restore'}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  {/* Savings Column */}
+                  <td style={{ padding: '12px 16px' }}>
+                    <span className="container-badge badge-emerald" style={{ fontWeight: 700 }}>
+                      -{img.estimated_savings_pct}%
+                    </span>
+                  </td>
+
+                  {/* Action Column */}
+                  <td style={{ padding: '12px 18px', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                      <button
+                        onClick={() => onCompareImage(img)}
+                        className="btn btn-secondary"
+                        style={{ padding: '5px 10px', fontSize: '11px' }}
+                        title="Inspect side-by-side with optical slider"
+                      >
+                        <Eye size={12} color="#008060" />
+                        Inspect ⟷
+                      </button>
+                      <button
+                        onClick={(e) => handleRowRestore(img.filename, e)}
+                        disabled={restoredImages.has(img.filename)}
+                        className="btn btn-secondary"
+                        style={{
+                          padding: '5px 8px',
+                          fontSize: '11px',
+                          color: restoredImages.has(img.filename) ? '#008060' : 'var(--fg-secondary)',
+                          borderColor: restoredImages.has(img.filename) ? '#a7f3d0' : undefined
+                        }}
+                        title="Revert this individual image back to original uncompressed asset"
+                      >
+                        {restoredImages.has(img.filename) ? <Check size={12} /> : <RotateCcw size={12} />}
+                        {restoredImages.has(img.filename) ? 'Restored' : 'Restore'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -360,15 +604,18 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage }
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page === 1}
             className="btn btn-secondary"
-            style={{ padding: '4px 10px', fontSize: '11px' }}
+            style={{ padding: '4px 8px', fontSize: '11px' }}
           >
-            Prev
+            Previous
           </button>
+          <span style={{ display: 'flex', alignItems: 'center', padding: '0 8px' }}>
+            Page {page} of {totalPages}
+          </span>
           <button
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
             className="btn btn-secondary"
-            style={{ padding: '4px 10px', fontSize: '11px' }}
+            style={{ padding: '4px 8px', fontSize: '11px' }}
           >
             Next
           </button>
@@ -377,3 +624,5 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage }
     </div>
   );
 };
+
+export default ImageTable;

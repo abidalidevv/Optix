@@ -1,5 +1,5 @@
 # ⚡ Optix — Speed & Optical Optimizer
-### Commercial Shopify App: Modern Image Compressor & PageSpeed Booster (v2.4.0)
+### Commercial Shopify App: Modern Image Compressor & PageSpeed Booster (v2.5.0)
 
 > **Brand Identity:** Sibling SaaS of **Clonix** (Clonix Labs)  
 > **Repository:** [https://github.com/abidalidevv/Optix](https://github.com/abidalidevv/Optix)  
@@ -60,6 +60,13 @@ Tested on physical source asset: `46210584019185.png` (Nijaat Dublepan):
 - Zero distracting emojis — replaced by clean Lucide SVG icons.
 - High-legibility active navigation tabs (`#E4F8F0` tint with bold `#008060` text).
 
+### 🏷️ Smart SEO Alt-Text AI Engine & Google Ranking Optimizer
+- **Automated Dummy & Missing Detection:** Identifies empty alt tags or dummy numeric strings (e.g. `46210618523889`, generic filenames). Displays warning `DUMMY` badges.
+- **Bilingual Herbal Product Knowledge Base:** Intelligently maps catalog assets to high-ranking SEO titles (e.g. `Nijaat Likoria (نجات لیکوریا) - Women Health & Vitality Herbal Capsule | Tibbe Shifa`).
+- **1-Click Batch Optimization:** Top `Auto-Generate SEO Alt Tags` button instantly updates all catalog media in one click.
+- **Inline Editing & AI Sparkle:** Merchants can click `<Sparkles>` for instant single-image suggestions or edit directly inline in the catalog table.
+- **Inspector Alt-Tag Editor:** Full interactive Alt-Text editor bar inside the Side-by-Side Optical Inspector modal.
+
 ---
 
 ## 🛠️ 4. Technical Architecture
@@ -84,6 +91,10 @@ Tested on physical source asset: `46210584019185.png` (Nijaat Dublepan):
 - `POST /api/image/restore`: Rollback single asset to original uncompressed.
 - `POST /api/restore/all`: Store-wide 1-click restore to original baseline.
 - `POST /api/backups/purge`: Purges heavy original backup cache and reclaims disk storage.
+- `GET /api/alt-text/stats`: Returns count of missing/dummy vs optimized alt tags.
+- `POST /api/alt-text/optimize-all`: 1-Click batch generates smart SEO alt tags for entire catalog.
+- `POST /api/alt-text/update`: Updates and persists single image alt text.
+- `GET /api/alt-text/suggest`: AI suggests high-ranking SEO alt tag for specific image.
 - `GET /api/theme/status`: Theme sandbox status (Live ID `162635677937` vs Sandbox ID `189439705309`).
 - `POST /api/theme/duplicate`: Creates fresh draft theme duplicate.
 - `POST /api/theme/publish`: Zero-downtime 1-click live publish.

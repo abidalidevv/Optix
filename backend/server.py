@@ -18,11 +18,13 @@ from backend.models import (
     CompressionResult,
     ThemeSafetyStatus
 )
+from pydantic import BaseModel
 from backend.pagespeed_auditor import pagespeed_auditor
 from backend.compressor import compressor
 from backend.shopify_client import shopify_client
 from backend.reference_swapper import reference_swapper
 from backend.theme_guard import theme_guard
+from backend.alt_text_generator import alt_manager, is_dummy_alt, generate_smart_alt
 
 # Configure logging
 logging.basicConfig(
@@ -348,4 +350,61 @@ def get_mapping():
     return {
         "total_mapped": len(current_url_mapping),
         "mappings": current_url_mapping
+    }
+
+class AltTextUpdateRequest(BaseModel):
+    filename: str
+    alt_text: str
+
+@app.get("/api/alt-text/stats")
+def get_alt_text_stats():
+    audit_report = pagespeed_auditor.run_audit(force_refresh=False)
+    total = len(audit_report.images)
+    dummy_count = 0
+    optimized_count = 0
+    for img in audit_report.images:
+        if is_dummy_alt(img.alt_text, img.filename):
+            dummy_count += 1
+        else:
+            optimized_count += 1
+    return {
+        "total_images": total,
+        "dummy_or_missing": dummy_count,
+        "optimized": optimized_count
+    }
+
+@app.post("/api/alt-text/optimize-all")
+def optimize_all_alt_texts():
+    audit_report = pagespeed_auditor.run_audit(force_refresh=False)
+    result = alt_manager.optimize_all(audit_report.images)
+    # Refresh in-memory audit images
+    for img in audit_report.images:
+        smart, _ = alt_manager.get_alt(img.filename, img.alt_text, img.category)
+        img.alt_text = smart
+        img.is_dummy_alt = False
+    return result
+
+@app.post("/api/alt-text/update")
+def update_alt_text(req: AltTextUpdateRequest):
+    alt_manager.set_alt(req.filename, req.alt_text)
+    # Update in-memory audit image
+    if pagespeed_auditor.cached_report:
+        for img in pagespeed_auditor.cached_report.images:
+            if img.filename == req.filename:
+                img.alt_text = req.alt_text.strip()
+                img.is_dummy_alt = is_dummy_alt(req.alt_text, req.filename)
+                break
+    return {
+        "success": True,
+        "filename": req.filename,
+        "alt_text": req.alt_text.strip(),
+        "message": f"Alt text updated for {req.filename}!"
+    }
+
+@app.get("/api/alt-text/suggest")
+def suggest_alt_text(filename: str = Query(...), category: str = Query("files")):
+    suggested = generate_smart_alt(filename, category)
+    return {
+        "filename": filename,
+        "suggested_alt": suggested
     }

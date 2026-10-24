@@ -7,6 +7,7 @@ from PIL import Image
 
 from backend.config import settings
 from backend.models import StoreAuditReport, ImageAuditItem
+from backend.alt_text_generator import alt_manager
 
 logger = logging.getLogger("optix.auditor")
 
@@ -117,7 +118,8 @@ class PageSpeedAuditor:
 
             dims_str = f"{width}x{height}" if width and height else None
             clean_slug = Path(filename).stem.lower().replace('_', '-').replace(' ', '-')
-            alt_text = item.get("altText") or f"{clean_slug.replace('-', ' ').title()} - Tibbe Shifa"
+            category_val = item.get("category", "files")
+            alt_text, _ = alt_manager.get_alt(filename, item.get("altText"), category_val)
 
             images.append(ImageAuditItem(
                 id=item.get("id", Path(filename).stem),

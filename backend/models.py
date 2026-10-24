@@ -18,6 +18,8 @@ class ImageAuditItem(BaseModel):
     height: Optional[int] = None
     dimensions: Optional[str] = None
     alt_text: Optional[str] = None
+    is_dummy_alt: bool = False
+    suggested_alt: Optional[str] = None
     seo_slug: Optional[str] = None
     ssim_score: Optional[float] = 0.999
     compression_status: str = "pending" # pending, optimized, uploaded, swapped
@@ -54,6 +56,8 @@ class StoreAuditReport(BaseModel):
     estimated_saved_mb: float
     overall_reduction_pct: float
     heavy_images_count: int
+    missing_alt_count: int = 0
+    optimized_alt_count: int = 0
     
     # Google PageSpeed & Core Web Vitals (LCP, CLS, INP)
     pagespeed_mobile_before: int = 38

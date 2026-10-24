@@ -15,6 +15,8 @@ export interface ImageAuditItem {
   height?: number;
   dimensions?: string;
   alt_text?: string;
+  is_dummy_alt?: boolean;
+  suggested_alt?: string;
   seo_slug?: string;
   ssim_score?: number;
   compression_status: 'pending' | 'optimized' | 'uploaded' | 'swapped';

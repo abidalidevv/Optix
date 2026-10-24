@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { X, Eye, RotateCcw, Check, Columns, Sliders } from 'lucide-react';
+import { X, Eye, RotateCcw, Check, Columns, Sliders, Sparkles, Save } from 'lucide-react';
 import type { ImageAuditItem } from '../types';
 import { optixApi } from '../api';
 
@@ -16,8 +16,36 @@ export const ImageComparatorModal: React.FC<ImageComparatorModalProps> = ({ imag
   const [sliderPos, setSliderPos] = useState<number>(50);
   const [restored, setRestored] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [modalAlt, setModalAlt] = useState<string>(image.alt_text || '');
+  const [isSavingAlt, setIsSavingAlt] = useState<boolean>(false);
+  const [altSaveStatus, setAltSaveStatus] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef<boolean>(false);
+
+  const handleSuggestAlt = async () => {
+    try {
+      const res = await optixApi.suggestAltText(image.filename, image.category);
+      if (res?.suggested_alt) {
+        setModalAlt(res.suggested_alt);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSaveAlt = async () => {
+    try {
+      setIsSavingAlt(true);
+      await optixApi.updateAltText(image.filename, modalAlt);
+      setAltSaveStatus('Saved!');
+      setTimeout(() => setAltSaveStatus(null), 2500);
+    } catch (e) {
+      console.error(e);
+      setAltSaveStatus('Failed');
+    } finally {
+      setIsSavingAlt(false);
+    }
+  };
 
   const handlePointerDown = () => {
     isDragging.current = true;
@@ -116,15 +144,15 @@ export const ImageComparatorModal: React.FC<ImageComparatorModalProps> = ({ imag
         {/* Telemetry Bar */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
           gap: '12px',
-          padding: '12px 16px',
+          padding: '10px 16px',
           background: 'var(--bg-subtle)',
           border: '1px solid var(--border-hairline)',
           borderRadius: 'var(--radius-sm)',
           fontSize: '12px',
           fontFamily: 'JetBrains Mono, monospace',
-          marginBottom: '16px'
+          marginBottom: '10px'
         }}>
           <div>
             <span style={{ color: 'var(--fg-secondary)' }}>FORMAT: </span>
@@ -137,11 +165,68 @@ export const ImageComparatorModal: React.FC<ImageComparatorModalProps> = ({ imag
             </span>
           </div>
           <div>
-            <span style={{ color: 'var(--fg-secondary)' }}>ALT TEXT: </span>
-            <span style={{ color: 'var(--tint-emerald-text)' }}>
-              {image.alt_text || image.seo_slug || 'Store Catalog Product Media'}
+            <span style={{ color: 'var(--fg-secondary)' }}>CATEGORY: </span>
+            <span style={{ color: 'var(--fg-primary)', fontWeight: 600 }}>
+              {image.category.toUpperCase()}
             </span>
           </div>
+        </div>
+
+        {/* Interactive SEO Alt Tag Editor Bar */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 12px',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-hairline)',
+          borderRadius: 'var(--radius-sm)',
+          fontSize: '12px',
+          fontFamily: 'JetBrains Mono, monospace',
+          marginBottom: '16px',
+          flexWrap: 'wrap'
+        }}>
+          <span style={{ color: 'var(--fg-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+            SEO ALT TAG:
+          </span>
+          <input
+            type="text"
+            value={modalAlt}
+            onChange={(e) => setModalAlt(e.target.value)}
+            placeholder="Descriptive Google SEO Alt Text..."
+            style={{
+              flex: 1,
+              minWidth: '220px',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-hairline)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '6px 10px',
+              fontSize: '12px',
+              fontFamily: 'JetBrains Mono, monospace',
+              color: 'var(--fg-primary)',
+              outline: 'none'
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleSuggestAlt}
+            className="btn btn-secondary"
+            style={{ padding: '5px 10px', fontSize: '11px' }}
+            title="Auto-generate high-ranking SEO alt text based on catalog product knowledge"
+          >
+            <Sparkles size={12} color="#008060" />
+            AI Suggest
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveAlt}
+            disabled={isSavingAlt}
+            className="btn btn-green"
+            style={{ padding: '5px 12px', fontSize: '11px' }}
+          >
+            <Save size={12} />
+            {isSavingAlt ? 'Saving...' : altSaveStatus || 'Save Alt Tag'}
+          </button>
         </div>
 
         {/* Format Selector Pills */}

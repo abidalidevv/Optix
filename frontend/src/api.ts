@@ -74,5 +74,33 @@ export const optixApi = {
     const res = await fetch(`${API_BASE}/backups/purge`, { method: 'POST' });
     if (!res.ok) throw new Error('Failed to purge backups');
     return res.json();
+  },
+
+  async getAltTextStats(): Promise<{ total_images: number; dummy_or_missing: number; optimized: number }> {
+    const res = await fetch(`${API_BASE}/alt-text/stats`);
+    if (!res.ok) throw new Error('Failed to fetch alt text stats');
+    return res.json();
+  },
+
+  async optimizeAllAltTexts(): Promise<{ success: boolean; total_images: number; optimized_count: number; message: string }> {
+    const res = await fetch(`${API_BASE}/alt-text/optimize-all`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to optimize all alt texts');
+    return res.json();
+  },
+
+  async updateAltText(filename: string, altText: string): Promise<{ success: boolean; filename: string; alt_text: string; message: string }> {
+    const res = await fetch(`${API_BASE}/alt-text/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename, alt_text: altText })
+    });
+    if (!res.ok) throw new Error('Failed to update alt text');
+    return res.json();
+  },
+
+  async suggestAltText(filename: string, category: string = 'files'): Promise<{ filename: string; suggested_alt: string }> {
+    const res = await fetch(`${API_BASE}/alt-text/suggest?filename=${encodeURIComponent(filename)}&category=${encodeURIComponent(category)}`);
+    if (!res.ok) throw new Error('Failed to get alt text suggestion');
+    return res.json();
   }
 };
