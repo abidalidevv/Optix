@@ -6,9 +6,10 @@ import { optixApi } from '../api';
 interface ImageComparatorModalProps {
   image: ImageAuditItem | null;
   onClose: () => void;
+  onAltUpdated?: (filename: string, newAlt: string) => void;
 }
 
-export const ImageComparatorModal: React.FC<ImageComparatorModalProps> = ({ image, onClose }) => {
+export const ImageComparatorModal: React.FC<ImageComparatorModalProps> = ({ image, onClose, onAltUpdated }) => {
   if (!image) return null;
 
   const [viewMode, setViewMode] = useState<'side-by-side' | 'slider'>('side-by-side');
@@ -37,6 +38,9 @@ export const ImageComparatorModal: React.FC<ImageComparatorModalProps> = ({ imag
     try {
       setIsSavingAlt(true);
       await optixApi.updateAltText(image.filename, modalAlt);
+      if (onAltUpdated) {
+        onAltUpdated(image.filename, modalAlt);
+      }
       setAltSaveStatus('Saved!');
       setTimeout(() => setAltSaveStatus(null), 2500);
     } catch (e) {
@@ -198,7 +202,7 @@ export const ImageComparatorModal: React.FC<ImageComparatorModalProps> = ({ imag
               flex: 1,
               minWidth: '220px',
               background: 'var(--bg-subtle)',
-              border: '1px solid var(--border-hairline)',
+              border: `1px solid ${modalAlt.length > 125 ? '#ef4444' : 'var(--border-hairline)'}`,
               borderRadius: 'var(--radius-sm)',
               padding: '6px 10px',
               fontSize: '12px',
@@ -207,6 +211,9 @@ export const ImageComparatorModal: React.FC<ImageComparatorModalProps> = ({ imag
               outline: 'none'
             }}
           />
+          <span style={{ fontSize: '11px', color: modalAlt.length > 125 ? '#ef4444' : 'var(--fg-muted)', whiteSpace: 'nowrap' }}>
+            {modalAlt.length}/125
+          </span>
           <button
             type="button"
             onClick={handleSuggestAlt}

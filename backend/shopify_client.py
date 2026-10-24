@@ -228,6 +228,65 @@ class ShopifyGraphQLClient:
 
         return resource_url
 
+    def update_file_alt(self, file_id: str, alt_text: str) -> bool:
+        """
+        Updates alt text of an existing Shopify media file using GraphQL fileUpdate mutation.
+        file_id can be numeric ID or full GID (e.g. gid://shopify/MediaImage/46348966297841).
+        """
+        gid = file_id if file_id.startswith("gid://shopify/") else f"gid://shopify/MediaImage/{file_id}"
+        mutation = """
+        mutation fileUpdate($files: [FileUpdateInput!]!) {
+          fileUpdate(files: $files) {
+            files {
+              id
+              alt
+            }
+            userErrors {
+              field
+              message
+            }
+          }
+        }
+        """
+        variables = {
+            "files": [
+                {
+                    "id": gid,
+                    "alt": alt_text
+                }
+            ]
+        }
+        try:
+            res = self.execute_graphql(mutation, variables)
+            user_errors = res.get("data", {}).get("fileUpdate", {}).get("userErrors", [])
+            if user_errors:
+                logger.warning(f"fileUpdate userErrors for {file_id}: {user_errors}")
+                return False
+            return True
+        except Exception as e:
+            logger.error(f"Error executing fileUpdate for {file_id}: {e}")
+            return False
+
+    def batch_update_files_alt(self, updates: List[Dict[str, str]]) -> Dict[str, Any]:
+        """
+        Updates alt text for multiple media files in Shopify with rate limit protection.
+        updates = [{"id": file_id, "alt": alt_text}, ...]
+        """
+        success_count = 0
+        error_count = 0
+        for item in updates:
+            ok = self.update_file_alt(item["id"], item["alt"])
+            if ok:
+                success_count += 1
+            else:
+                error_count += 1
+        return {
+            "success": True,
+            "updated": success_count,
+            "failed": error_count,
+            "total": len(updates)
+        }
+
     def get_themes(self) -> List[Dict[str, Any]]:
         query = """
         {

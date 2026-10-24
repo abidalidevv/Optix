@@ -82,7 +82,7 @@ export const optixApi = {
     return res.json();
   },
 
-  async optimizeAllAltTexts(): Promise<{ success: boolean; total_images: number; optimized_count: number; message: string }> {
+  async optimizeAllAltTexts(): Promise<{ success: boolean; total_images: number; optimized_count: number; mapping?: Record<string, string>; message: string }> {
     const res = await fetch(`${API_BASE}/alt-text/optimize-all`, { method: 'POST' });
     if (!res.ok) throw new Error('Failed to optimize all alt texts');
     return res.json();
@@ -101,6 +101,12 @@ export const optixApi = {
   async suggestAltText(filename: string, category: string = 'files'): Promise<{ filename: string; suggested_alt: string }> {
     const res = await fetch(`${API_BASE}/alt-text/suggest?filename=${encodeURIComponent(filename)}&category=${encodeURIComponent(category)}`);
     if (!res.ok) throw new Error('Failed to get alt text suggestion');
+    return res.json();
+  },
+
+  async syncAltTextsToShopify(): Promise<{ success: boolean; synced_count: number; total_queued: number; message: string }> {
+    const res = await fetch(`${API_BASE}/alt-text/sync-shopify`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to sync alt texts to Shopify');
     return res.json();
   }
 };

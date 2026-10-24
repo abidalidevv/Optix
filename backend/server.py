@@ -359,16 +359,10 @@ class AltTextUpdateRequest(BaseModel):
 @app.get("/api/alt-text/stats")
 def get_alt_text_stats():
     audit_report = pagespeed_auditor.run_audit(force_refresh=False)
-    total = len(audit_report.images)
-    dummy_count = 0
-    optimized_count = 0
-    for img in audit_report.images:
-        if is_dummy_alt(img.alt_text, img.filename):
-            dummy_count += 1
-        else:
-            optimized_count += 1
+    dummy_count = sum(1 for img in audit_report.images if img.is_dummy_alt)
+    optimized_count = len(audit_report.images) - dummy_count
     return {
-        "total_images": total,
+        "total_images": len(audit_report.images),
         "dummy_or_missing": dummy_count,
         "optimized": optimized_count
     }
@@ -379,9 +373,9 @@ def optimize_all_alt_texts():
     result = alt_manager.optimize_all(audit_report.images)
     # Refresh in-memory audit images
     for img in audit_report.images:
-        smart, _ = alt_manager.get_alt(img.filename, img.alt_text, img.category)
-        img.alt_text = smart
-        img.is_dummy_alt = False
+        if img.filename in alt_manager.mapping:
+            img.alt_text = alt_manager.mapping[img.filename]
+            img.is_dummy_alt = False
     return result
 
 @app.post("/api/alt-text/update")
@@ -407,4 +401,33 @@ def suggest_alt_text(filename: str = Query(...), category: str = Query("files"))
     return {
         "filename": filename,
         "suggested_alt": suggested
+    }
+
+@app.post("/api/alt-text/sync-shopify")
+def sync_alt_texts_to_shopify():
+    """
+    Syncs saved alt-text tags directly to live Shopify store media using GraphQL fileUpdate.
+    """
+    manifest_lookup = alt_manager.manifest_lookup
+    updates = []
+    for fn, alt in alt_manager.mapping.items():
+        stem = Path(fn).stem
+        item = manifest_lookup.get(fn) or manifest_lookup.get(stem)
+        file_id = item.get("id") if item else stem
+        if file_id:
+            updates.append({"id": file_id, "alt": alt})
+
+    if not updates:
+        return {
+            "success": False,
+            "message": "No optimized alt texts found to sync. Run 'Auto-Generate SEO Alt Tags' first."
+        }
+
+    # Execute batch update via GraphQL (safely capped to active batch)
+    result = shopify_client.batch_update_files_alt(updates[:50])
+    return {
+        "success": True,
+        "synced_count": result.get("updated", 0),
+        "total_queued": len(updates),
+        "message": f"Successfully synced {result.get('updated', len(updates))} alt tags to Shopify Live store!"
     }

@@ -114,6 +114,22 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleAltUpdated = (filename: string, newAlt: string) => {
+    if (report) {
+      setReport(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          images: prev.images.map(img =>
+            img.filename === filename
+              ? { ...img, alt_text: newAlt, is_dummy_alt: false }
+              : img
+          )
+        };
+      });
+    }
+  };
+
   return (
     <div className="app-shell">
       {/* 1. App Header (Clonix Polaris Top Bar) */}
@@ -190,6 +206,7 @@ export const App: React.FC = () => {
               <ImageTable
                 images={report.images.slice(0, 8)}
                 onCompareImage={(img) => setInspectImage(img)}
+                onRefresh={() => loadAuditData(true)}
               />
             </div>
           )}
@@ -200,6 +217,7 @@ export const App: React.FC = () => {
         <ImageTable
           images={report.images}
           onCompareImage={(img) => setInspectImage(img)}
+          onRefresh={() => loadAuditData(true)}
         />
       )}
 
@@ -229,6 +247,7 @@ export const App: React.FC = () => {
         <ImageComparatorModal
           image={inspectImage}
           onClose={() => setInspectImage(null)}
+          onAltUpdated={handleAltUpdated}
         />
       )}
 

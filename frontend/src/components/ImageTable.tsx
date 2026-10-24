@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, AlertCircle, Eye, RotateCcw, Check, Sparkles, Edit2, Save, X } from 'lucide-react';
+import { Search, AlertCircle, Eye, RotateCcw, Check, Sparkles, Edit2, Save, X, UploadCloud } from 'lucide-react';
 import type { ImageAuditItem } from '../types';
 import { optixApi } from '../api';
 
@@ -47,25 +47,20 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage, 
     }
   };
 
-  // 1-Click Batch Auto-Generate SEO Alt Tags for All Images
+  // 1-Click Batch Auto-Generate SEO Alt Tags for All Images (Instant O(1) Mapping)
   const handleBatchOptimizeAlt = async () => {
     try {
       setIsBatchOptimizingAlt(true);
       setAltBannerMessage(null);
       const res = await optixApi.optimizeAllAltTexts();
       
-      // Update local state overrides
-      const updatedMap: Record<string, string> = {};
-      for (const img of images) {
-        const s = await optixApi.suggestAltText(img.filename, img.category);
-        if (s?.suggested_alt) {
-          updatedMap[img.filename] = s.suggested_alt;
-        }
+      // Update local state overrides instantly without N+1 HTTP loop
+      if (res.mapping) {
+        setAltOverrides(prev => ({ ...prev, ...res.mapping }));
       }
-      setAltOverrides(prev => ({ ...prev, ...updatedMap }));
       setAltBannerMessage({
         type: 'success',
-        text: `✓ Successfully generated high-ranking Google SEO Alt Tags for ${res.optimized_count || images.length} images!`
+        text: `✓ Successfully generated unique Google SEO Alt Tags for ${res.optimized_count || images.length} images!`
       });
       if (onRefresh) onRefresh();
     } catch (err: any) {
@@ -75,6 +70,28 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage, 
       });
     } finally {
       setIsBatchOptimizingAlt(false);
+    }
+  };
+
+  const [isSyncingShopify, setIsSyncingShopify] = useState(false);
+
+  // Sync saved Alt Tags directly to Shopify Live store media via GraphQL
+  const handleSyncShopify = async () => {
+    try {
+      setIsSyncingShopify(true);
+      setAltBannerMessage(null);
+      const res = await optixApi.syncAltTextsToShopify();
+      setAltBannerMessage({
+        type: res.success ? 'success' : 'error',
+        text: res.message
+      });
+    } catch (err: any) {
+      setAltBannerMessage({
+        type: 'error',
+        text: 'Failed to sync to Shopify: ' + (err.message || 'Error')
+      });
+    } finally {
+      setIsSyncingShopify(false);
     }
   };
 
@@ -195,6 +212,17 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage, 
             {isBatchOptimizingAlt
               ? 'Generating SEO Alt Tags...'
               : `Auto-Generate SEO Alt Tags (${dummyAltCount} Dummy Detected)`}
+          </button>
+
+          <button
+            onClick={handleSyncShopify}
+            disabled={isSyncingShopify}
+            className="btn btn-secondary"
+            style={{ padding: '7px 12px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            title="Push saved SEO Alt Tags directly to Shopify Admin (Live store media)"
+          >
+            <UploadCloud size={14} color="#008060" />
+            {isSyncingShopify ? 'Syncing to Shopify...' : 'Sync to Shopify Live'}
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontFamily: 'JetBrains Mono, monospace', color: 'var(--fg-secondary)' }}>
@@ -440,41 +468,53 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage, 
                   {/* SEO Alt Text Column (Interactive Inline AI Engine) */}
                   <td style={{ padding: '12px 16px', maxWidth: '260px' }}>
                     {isEditing ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <input
-                          type="text"
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === 'Enter') handleSaveInlineAlt(img.filename); }}
-                          autoFocus
-                          style={{
-                            width: '100%',
-                            background: 'var(--bg-subtle)',
-                            border: '1px solid var(--p-green)',
-                            borderRadius: 'var(--radius-sm)',
-                            padding: '4px 8px',
-                            fontSize: '11.5px',
-                            fontFamily: 'JetBrains Mono, monospace',
-                            color: 'var(--fg-primary)',
-                            outline: 'none'
-                          }}
-                        />
-                        <button
-                          onClick={() => handleSaveInlineAlt(img.filename)}
-                          className="btn btn-green"
-                          style={{ padding: '4px 6px', fontSize: '10px' }}
-                          title="Save Alt Text"
-                        >
-                          <Save size={11} />
-                        </button>
-                        <button
-                          onClick={() => setEditingFilename(null)}
-                          className="btn btn-secondary"
-                          style={{ padding: '4px 6px', fontSize: '10px' }}
-                          title="Cancel"
-                        >
-                          <X size={11} />
-                        </button>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleSaveInlineAlt(img.filename); }}
+                            autoFocus
+                            style={{
+                              width: '100%',
+                              background: 'var(--bg-subtle)',
+                              border: `1px solid ${editValue.length > 125 ? '#ef4444' : 'var(--p-green)'}`,
+                              borderRadius: 'var(--radius-sm)',
+                              padding: '4px 8px',
+                              fontSize: '11.5px',
+                              fontFamily: 'JetBrains Mono, monospace',
+                              color: 'var(--fg-primary)',
+                              outline: 'none'
+                            }}
+                          />
+                          <button
+                            onClick={() => handleSaveInlineAlt(img.filename)}
+                            className="btn btn-green"
+                            style={{ padding: '4px 6px', fontSize: '10px' }}
+                            title="Save Alt Text"
+                          >
+                            <Save size={11} />
+                          </button>
+                          <button
+                            onClick={() => setEditingFilename(null)}
+                            className="btn btn-secondary"
+                            style={{ padding: '4px 6px', fontSize: '10px' }}
+                            title="Cancel"
+                          >
+                            <X size={11} />
+                          </button>
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'flex-end',
+                          marginTop: '2px',
+                          fontSize: '10px',
+                          color: editValue.length > 125 ? '#ef4444' : 'var(--fg-muted)',
+                          fontFamily: 'JetBrains Mono, monospace'
+                        }}>
+                          {editValue.length}/125 chars {editValue.length > 125 ? '(WCAG warning)' : ''}
+                        </div>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>

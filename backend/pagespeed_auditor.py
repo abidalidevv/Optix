@@ -7,7 +7,7 @@ from PIL import Image
 
 from backend.config import settings
 from backend.models import StoreAuditReport, ImageAuditItem
-from backend.alt_text_generator import alt_manager
+from backend.alt_text_generator import alt_manager, is_dummy_alt
 
 logger = logging.getLogger("optix.auditor")
 
@@ -119,7 +119,21 @@ class PageSpeedAuditor:
             dims_str = f"{width}x{height}" if width and height else None
             clean_slug = Path(filename).stem.lower().replace('_', '-').replace(' ', '-')
             category_val = item.get("category", "files")
-            alt_text, _ = alt_manager.get_alt(filename, item.get("altText"), category_val)
+            raw_alt = item.get("altText") or item.get("alt")
+
+            # Determine if alt text is truly optimized or missing/dummy
+            if filename in alt_manager.mapping:
+                alt_val = alt_manager.mapping[filename]
+                is_dummy = False
+                suggested_val = alt_val
+            elif raw_alt and not is_dummy_alt(raw_alt, filename):
+                alt_val = raw_alt.strip()
+                is_dummy = False
+                suggested_val = alt_val
+            else:
+                alt_val = raw_alt.strip() if raw_alt else ""
+                is_dummy = True
+                suggested_val = alt_manager.generate_smart_alt(filename, category_val)
 
             images.append(ImageAuditItem(
                 id=item.get("id", Path(filename).stem),
@@ -137,7 +151,9 @@ class PageSpeedAuditor:
                 width=width,
                 height=height,
                 dimensions=dims_str,
-                alt_text=alt_text,
+                alt_text=alt_val,
+                is_dummy_alt=is_dummy,
+                suggested_alt=suggested_val,
                 seo_slug=clean_slug,
                 ssim_score=0.999,
                 compression_status="pending"
@@ -151,6 +167,9 @@ class PageSpeedAuditor:
         saved_mb = round(total_mb - opt_mb, 2)
         overall_saved_pct = round((saved_mb / total_mb * 100) if total_mb > 0 else 0.0, 1)
 
+        missing_alt_cnt = sum(1 for img in images if img.is_dummy_alt)
+        optimized_alt_cnt = len(images) - missing_alt_cnt
+
         report = StoreAuditReport(
             shop=settings.shop,
             scanned_at=datetime.utcnow().isoformat() + "Z",
@@ -162,6 +181,8 @@ class PageSpeedAuditor:
             estimated_saved_mb=saved_mb,
             overall_reduction_pct=overall_saved_pct,
             heavy_images_count=heavy_count,
+            missing_alt_count=missing_alt_cnt,
+            optimized_alt_count=optimized_alt_cnt,
             pagespeed_mobile_before=38,
             pagespeed_mobile_after=94,
             pagespeed_desktop_before=61,
