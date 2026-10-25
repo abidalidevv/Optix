@@ -130,3 +130,43 @@ npm run dev
 
 * **Frontend Dashboard:** `http://localhost:5173`
 * **Backend API Docs:** `http://localhost:8000/docs`
+
+---
+
+## 📂 6. Clean Project Structure & Documentation
+
+All technical documentation, blueprints, and design specifications are cleanly categorized inside [`docs/`](file:///c:/Users/Ali/Desktop/optix/docs):
+
+```
+optix/
+├── backend/                   # FastAPI backend, multithreaded Pillow engine, GraphQL client
+│   ├── alt_text_generator.py  # Smart SEO Alt-Text AI engine (Urdu + English, Google 125-char limit)
+│   ├── compressor.py          # Dual AVIF/WebP converter with SSIM perceptual quality calculator
+│   ├── pagespeed_auditor.py   # Pre-flight payload & speed auditor (Core Web Vitals telemetry)
+│   ├── shopify_client.py      # Shopify GraphQL API with leaky-bucket rate limiter & fileUpdate
+│   ├── theme_guard.py         # Zero-Risk draft theme sandbox guard ([Optix] Speed-Optimized Theme)
+│   ├── reference_swapper.py   # Liquid AST and settings_data.json reference replacer
+│   ├── server.py              # FastAPI server and REST endpoints
+│   ├── models.py              # Pydantic data schemas
+│   └── tests/                 # Test suite
+├── frontend/                  # React 18 + Vite Shopify Polaris light mode dashboard
+│   ├── src/components/        # Speed Cockpit, Image Catalog, Inspector Modal, Theme Sandbox, Pricing
+│   ├── src/api.ts             # API client
+│   └── src/index.css          # Design system styles and tokens
+├── docs/                      # 📚 Complete Specifications & Blueprints
+│   ├── DESIGN_SYSTEM.md       # High-Fidelity Polaris & Micro-SaaS visual identity & token spec
+│   ├── SHOPIFY_APP_STORE_PACKAGING.md # App Store manifest, access scopes & deployment guide
+│   ├── SIBLING_APP_IMAGE_OPTIMIZER_MASTER_BLUEPRINT.md # Master architectural blueprint & benchmarks
+│   └── EXACT_CLONIX_INDEX_PROMPT.md # Project foundation prompts
+├── data/                      # 🗄️ Runtime Mappings & Cache
+│   ├── alt_text_mapping.json  # 528 unique Google-ranking bilingual alt tags
+│   ├── url_mapping.json       # 1,058 original CDN -> Next-Gen WebP URL mappings
+│   └── settings_data_optimized.json # Theme AST swapped settings
+├── optimized/                 # 2,114 generated Next-Gen files (1057 WebP + 1057 AVIF)
+├── scripts/                   # CLI helper tools (batch_optimize_store.py)
+├── shopify.app.toml           # Official Shopify App CLI 3.x configuration manifest
+├── package.json               # Root npm scripts (dev, build, start, shopify:deploy)
+├── requirements.txt           # Python dependencies
+├── start.py                   # One-command dual server launcher
+└── run_optix.bat              # Windows one-click launcher
+```
