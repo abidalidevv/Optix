@@ -1,0 +1,28 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "optix-speed-optimizer"
+name = "Optix — Speed & Optical Optimizer"
+handle = "optix-speed-optimizer"
+application_url = "https://optix.clonixlabs.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "ph0igg-jv.myshopify.com"
+
+[access_scopes]
+# Required permissions for image inspection, CDN upload, theme AST swapping, and Alt-Text sync
+scopes = "read_themes,write_themes,read_files,write_files,read_products,read_content"
+
+[auth]
+redirect_urls = [
+  "https://optix.clonixlabs.com/auth/callback",
+  "https://optix.clonixlabs.com/auth/shopify/callback",
+  "http://localhost:8000/auth/callback"
+]
+
+[webhooks]
+api_version = "2024-10"
+
+[pos]
+embedded = false

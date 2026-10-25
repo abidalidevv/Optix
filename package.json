@@ -1,0 +1,30 @@
+{
+  "name": "optix",
+  "version": "2.5.2",
+  "description": "Commercial Shopify App: Next-Gen Dual Image Compressor (AVIF+WebP), PageSpeed Booster, and SEO Alt-Text AI Engine",
+  "main": "start.py",
+  "scripts": {
+    "start": "python start.py",
+    "dev": "python start.py",
+    "build": "cd frontend && npm run build",
+    "test": "pytest backend/tests",
+    "shopify:config:link": "shopify app config link",
+    "shopify:deploy": "shopify app deploy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abidalidevv/Optix.git"
+  },
+  "keywords": [
+    "shopify",
+    "shopify-app",
+    "image-compressor",
+    "pagespeed",
+    "avif",
+    "webp",
+    "core-web-vitals",
+    "seo-alt-text"
+  ],
+  "author": "Clonix Labs",
+  "license": "MIT"
+}
