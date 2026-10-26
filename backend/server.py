@@ -82,12 +82,51 @@ def get_health():
         "target_baseline": "ph0igg-jv.myshopify.com (tibbeshifa.com)"
     }
 
+CATALOG_PRODUCTS = [
+    {"id": "all", "handle": "all", "title_ur": "تمام پروڈکٹس", "title_en": "All Store Media", "template": "all"},
+    {"id": "meda", "handle": "shifa-e-meda", "title_ur": "شفائے معدہ", "title_en": "Shifa-e-Medda", "template": "product.newmedda.json", "keywords": ["meda", "sm1", "sm2", "sm3", "196ff892", "a76c6123", "a69130e8", "9ff0bcf4", "2c58f670", "55b477cc", "7d2fa1e4", "1f10d7e1", "bba3c5fe", "04d35db1", "d758073d", "117bca03", "e8c3fe90", "83c5d0bf", "e6404290", "3fcd2585", "images_2", "46348965"]},
+    {"id": "jaryan", "handle": "nijat-e-jaryaan", "title_ur": "نجات جریان", "title_en": "Nijat-e-Jaryaan", "template": "product.newjaryaan.json", "keywords": ["jaryan", "nj1", "nj2", "nj3", "d054e9bd", "46348949", "46210583855345"]},
+    {"id": "bawasir", "handle": "nijat-e-bawaseer", "title_ur": "نجات بواسیر", "title_en": "Nijat-e-Bawaseer", "template": "product.newbawaseer.json", "keywords": ["bawasir", "bawaseer", "piles", "c54401f7", "46348966", "46210583888113"]},
+    {"id": "qabz", "handle": "qabz-kusha", "title_ur": "قبض کشا", "title_en": "Qabz Kusha", "template": "product.newqabz.json", "keywords": ["qabz", "constipation", "46210607", "46348957", "46348961", "46210583953649"]},
+    {"id": "sugar", "handle": "sugar-care", "title_ur": "شوگر کیئر", "title_en": "Sugar Care", "template": "product.newsugar.json", "keywords": ["sugar", "87b6d299", "46348963", "46210593", "46210583920881"]},
+    {"id": "dublepan", "handle": "nijat-dublepan", "title_ur": "نجات دبلپن", "title_en": "Nijat Dublepan", "template": "product.newdublepan.json", "keywords": ["dublepan", "dublapun", "1c01e1d5", "46348964", "46210584", "46210583986417"]},
+    {"id": "likoria", "handle": "nijat-likoria", "title_ur": "نجات لیکوریا", "title_en": "Nijat Likoria", "template": "product.newlikoria.json", "keywords": ["likoria", "c9fd6a39", "46348951", "46348952", "46210618"]}
+]
+
+@app.get("/api/products")
+def get_products():
+    return CATALOG_PRODUCTS
+
 @app.get("/api/audit", response_model=StoreAuditReport)
-def get_audit(refresh: bool = False):
+def get_audit(refresh: bool = False, product: Optional[str] = None):
     """
     100% Free Pre-flight Speed & Payload Audit endpoint.
+    Optionally filter by product handle / id for single-page canary testing.
     """
     report = pagespeed_auditor.run_audit(force_refresh=refresh)
+    if product and product != "all":
+        prod_def = next((p for p in CATALOG_PRODUCTS if p["id"] == product or p["handle"] == product), None)
+        if prod_def:
+            kw_list = [k.lower() for k in prod_def["keywords"]]
+            filtered_images = [
+                img for img in report.images
+                if any(kw in (img.filename or "").lower() or kw in (img.url or "").lower() or kw in (img.id or "").lower() for kw in kw_list)
+            ]
+            total_bytes = sum(img.original_size_bytes for img in filtered_images)
+            total_savings_bytes = sum(int(img.original_size_bytes * (img.estimated_savings_pct / 100.0)) for img in filtered_images)
+            return StoreAuditReport(
+                total_images_count=len(filtered_images),
+                total_weight_mb=round(total_bytes / (1024 * 1024), 2) if filtered_images else 0.0,
+                heavy_images_count=sum(1 for img in filtered_images if img.is_heavy),
+                potential_savings_mb=round(total_savings_bytes / (1024 * 1024), 2) if filtered_images else 0.0,
+                estimated_avif_weight_mb=round((total_bytes - total_savings_bytes) / (1024 * 1024), 2) if filtered_images else 0.0,
+                simulated_score_mobile=report.simulated_score_mobile,
+                simulated_score_desktop=report.simulated_score_desktop,
+                current_score_mobile=report.current_score_mobile,
+                current_score_desktop=report.current_score_desktop,
+                core_web_vitals=report.core_web_vitals,
+                images=filtered_images
+            )
     return report
 
 @app.get("/api/progress", response_model=OptimizationProgress)

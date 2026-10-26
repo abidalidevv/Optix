@@ -13,6 +13,7 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage, 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFormat, setSelectedFormat] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedProduct, setSelectedProduct] = useState<string>('all');
   const [heavyOnly, setHeavyOnly] = useState(false);
   const [altFilter, setAltFilter] = useState<'all' | 'dummy' | 'optimized'>('all');
   const [sortBy, setSortBy] = useState<'size' | 'savings' | 'name'>('size');
@@ -127,6 +128,16 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage, 
   }, [images, altOverrides]);
 
   // Filter & Sort Logic
+  const PRODUCT_KEYWORDS: Record<string, string[]> = {
+    meda: ["meda", "sm1", "sm2", "sm3", "196ff892", "a76c6123", "a69130e8", "9ff0bcf4", "2c58f670", "55b477cc", "7d2fa1e4", "1f10d7e1", "bba3c5fe", "04d35db1", "d758073d", "117bca03", "e8c3fe90", "83c5d0bf", "e6404290", "3fcd2585", "images_2", "46348965"],
+    jaryan: ["jaryan", "nj1", "nj2", "nj3", "d054e9bd", "46348949", "46210583855345"],
+    bawasir: ["bawasir", "bawaseer", "piles", "c54401f7", "46348966", "46210583888113"],
+    qabz: ["qabz", "constipation", "46210607", "46348957", "46348961", "46210583953649"],
+    sugar: ["sugar", "87b6d299", "46348963", "46210593", "46210583920881"],
+    dublepan: ["dublepan", "dublapun", "1c01e1d5", "46348964", "46210584", "46210583986417"],
+    likoria: ["likoria", "c9fd6a39", "46348951", "46348952", "46210618"]
+  };
+
   const filteredImages = useMemo(() => {
     return images.filter(img => {
       const currentAlt = altOverrides[img.filename] ?? img.alt_text;
@@ -136,6 +147,14 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage, 
         const matchName = img.filename.toLowerCase().includes(term);
         const matchAlt = (currentAlt || '').toLowerCase().includes(term);
         if (!matchName && !matchAlt) return false;
+      }
+      if (selectedProduct !== 'all') {
+        const kws = PRODUCT_KEYWORDS[selectedProduct] || [];
+        const fn = img.filename.toLowerCase();
+        const url = (img.url || '').toLowerCase();
+        const id = (img.id || '').toLowerCase();
+        const matches = kws.some(kw => fn.includes(kw) || url.includes(kw) || id.includes(kw));
+        if (!matches) return false;
       }
       if (selectedFormat !== 'all') {
         const ext = img.filename.split('.').pop()?.toLowerCase();
@@ -166,7 +185,7 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage, 
         return a.filename.localeCompare(b.filename);
       }
     });
-  }, [images, searchTerm, selectedFormat, selectedCategory, heavyOnly, altFilter, sortBy, altOverrides]);
+  }, [images, searchTerm, selectedProduct, selectedFormat, selectedCategory, heavyOnly, altFilter, sortBy, altOverrides]);
 
   const totalPages = Math.ceil(filteredImages.length / pageSize) || 1;
   const paginatedImages = filteredImages.slice((page - 1) * pageSize, page * pageSize);
@@ -298,6 +317,31 @@ export const ImageTable: React.FC<ImageTableProps> = ({ images, onCompareImage, 
 
         {/* Filters */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontSize: '12px', fontFamily: 'JetBrains Mono, monospace' }}>
+          {/* Single Page / Product Filter */}
+          <select
+            value={selectedProduct}
+            onChange={(e) => { setSelectedProduct(e.target.value); setPage(1); }}
+            style={{
+              background: selectedProduct !== 'all' ? '#e4f8f0' : 'var(--bg-surface)',
+              border: `1px solid ${selectedProduct !== 'all' ? '#008060' : 'var(--border-hairline)'}`,
+              color: selectedProduct !== 'all' ? '#008060' : 'var(--fg-primary)',
+              fontWeight: selectedProduct !== 'all' ? 700 : 500,
+              borderRadius: 'var(--radius-sm)',
+              padding: '6px 10px',
+              outline: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <option value="all">📦 All Store Images</option>
+            <option value="meda">🥣 شفائے معدہ (Shifa-e-Medda)</option>
+            <option value="jaryan">⚡ نجات جریان (Nijat-e-Jaryaan)</option>
+            <option value="bawasir">🌿 نجات بواسیر (Nijat-e-Bawaseer)</option>
+            <option value="qabz">🍃 قبض کشا (Qabz Kusha)</option>
+            <option value="sugar">🩸 شوگر کیئر (Sugar Care)</option>
+            <option value="dublepan">💪 نجات دبلپن (Nijat Dublepan)</option>
+            <option value="likoria">🌸 نجات لیکوریا (Nijat Likoria)</option>
+          </select>
+
           <select
             value={selectedFormat}
             onChange={(e) => { setSelectedFormat(e.target.value); setPage(1); }}

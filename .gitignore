@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
 *.class
@@ -35,3 +35,11 @@ data/backups/
 Thumbs.db
 .vscode/
 .idea/
+
+# Extra Scratch Scripts & Temporary Files
+extra/
+
+# Markdown Files & Documentation (User instruction: Only README.md is uploaded)
+docs/
+*.md
+!README.md
