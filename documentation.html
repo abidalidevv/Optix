@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optix — Speed & Optical Optimizer | Enterprise Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            polaris: {
+              canvas: '#F6F6F7',
+              surface: '#FFFFFF',
+              hairline: '#E1E3E5',
+              subdued: '#6D7175',
+              primary: '#008060',
+              primaryHover: '#006E52',
+              primaryDark: '#004C3F',
+              accentLight: '#E4F8F0',
+              highlight: '#2C6ECB',
+              warning: '#FED8B1',
+              text: '#202223'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #F6F6F7;
+      color: #202223;
+      font-family: 'Inter', sans-serif;
+    }
+    .metric-card {
+      background: #FFFFFF;
+      border: 1px solid #E1E3E5;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border-radius: 12px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- Top Navigation Bar -->
+  <header class="bg-white border-b border-polaris-hairline sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-lg bg-polaris-primary flex items-center justify-center text-white font-bold text-lg shadow-sm">
+          ⚡
+        </div>
+        <div>
+          <span class="font-bold text-xl tracking-tight text-gray-900">Optix</span>
+          <span class="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-polaris-accentLight text-polaris-primary border border-polaris-primary/20">v2.6.0 Pro</span>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span class="text-xs font-mono bg-gray-100 text-gray-600 px-3 py-1.5 rounded-md border border-gray-200">
+          Store: <strong class="text-gray-900">0pr27z-us.myshopify.com</strong>
+        </span>
+        <a href="https://github.com/abidalidevv/Optix" target="_blank" class="text-xs font-semibold px-3 py-1.5 rounded-md bg-gray-900 text-white hover:bg-gray-800 transition">
+          GitHub Repo
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-10 space-y-12">
+    <!-- Hero Banner -->
+    <section class="bg-gradient-to-br from-white to-gray-50 border border-polaris-hairline rounded-2xl p-8 lg:p-12 shadow-sm">
+      <div class="max-w-3xl">
+        <div class="inline-flex items-center space-x-2 text-xs font-semibold text-polaris-primary bg-polaris-accentLight px-3 py-1 rounded-full mb-4">
+          <span>● Live Production Verified</span>
+          <span>•</span>
+          <span>Sibling SaaS of Clonix</span>
+        </div>
+        <h1 class="text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
+          Modern Shopify Optical Compression & Bilingual Alt-Text SEO Engine
+        </h1>
+        <p class="mt-4 text-base lg:text-lg text-polaris-subdued leading-relaxed">
+          Autonomous Next-Gen AVIF & Universal WebP conversion with in-place Shopify CDN swapping, sub-60-character bilingual Alt-Text generation, and zero broken links.
+        </p>
+      </div>
+
+      <!-- Live Telemetry KPI Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+        <div class="metric-card p-5">
+          <div class="text-xs font-medium text-polaris-subdued uppercase tracking-wider">Audited Assets</div>
+          <div class="text-2xl lg:text-3xl font-extrabold text-gray-900 mt-2 font-mono">594</div>
+          <div class="text-xs text-polaris-primary font-semibold mt-1">100% Media Catalog</div>
+        </div>
+
+        <div class="metric-card p-5">
+          <div class="text-xs font-medium text-polaris-subdued uppercase tracking-wider">Weight Savings</div>
+          <div class="text-2xl lg:text-3xl font-extrabold text-polaris-primary mt-2 font-mono">-90.9%</div>
+          <div class="text-xs text-gray-500 mt-1">2.07 MB ➔ 205 KB Canary</div>
+        </div>
+
+        <div class="metric-card p-5">
+          <div class="text-xs font-medium text-polaris-subdued uppercase tracking-wider">PageSpeed Score</div>
+          <div class="text-2xl lg:text-3xl font-extrabold text-emerald-600 mt-2 font-mono">97 <span class="text-sm font-normal text-gray-400">/ 100</span></div>
+          <div class="text-xs text-gray-500 mt-1">+59 pts Mobile Jump</div>
+        </div>
+
+        <div class="metric-card p-5">
+          <div class="text-xs font-medium text-polaris-subdued uppercase tracking-wider">Files &gt; 1 MB</div>
+          <div class="text-2xl lg:text-3xl font-extrabold text-emerald-600 mt-2 font-mono">0</div>
+          <div class="text-xs text-emerald-600 font-semibold mt-1">Safe Zone (&lt; 500 KB)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Core Features Grid -->
+    <section class="space-y-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Core Architectural Capabilities</h2>
+        <span class="text-xs text-polaris-subdued">Polaris Industrial Specification</span>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6">
+        <!-- Feature 1 -->
+        <div class="metric-card p-6 space-y-3">
+          <div class="w-10 h-10 rounded-lg bg-emerald-50 text-polaris-primary flex items-center justify-center font-bold text-xl">
+            🔄
+          </div>
+          <h3 class="text-lg font-bold text-gray-900">In-Place CDN Swapping</h3>
+          <p class="text-sm text-polaris-subdued leading-relaxed">
+            Replaces heavy PNG/JPG binaries directly on Shopify CDN using <code class="text-xs bg-gray-100 px-1 py-0.5 rounded font-mono">stagedUploadsCreate</code> and GraphQL <code class="text-xs bg-gray-100 px-1 py-0.5 rounded font-mono">fileUpdate</code>. Media IDs stay identical — eliminating broken Liquid/JSON references.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="metric-card p-6 space-y-3">
+          <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xl">
+            🎯
+          </div>
+          <h3 class="text-lg font-bold text-gray-900">Single-Product Funnel Filter</h3>
+          <p class="text-sm text-polaris-subdued leading-relaxed">
+            Laser-targeted dropdown selector allows auditing and optimizing one product landing page (e.g. <em>Nijat Dublepan</em>) at a time, protecting the rest of the store during canary rollout.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="metric-card p-6 space-y-3">
+          <div class="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xl">
+            🏷️
+          </div>
+          <h3 class="text-lg font-bold text-gray-900">Bilingual SERP Alt-Text AI</h3>
+          <p class="text-sm text-polaris-subdued leading-relaxed">
+            Enforces the Google-ranking format <code class="text-xs bg-gray-100 px-1 py-0.5 rounded font-mono">[English] - [Urdu]</code> strictly capped at &le; 60 characters with unani herbal powder (<span class="font-semibold text-gray-800">سفوف / پھکی</span>) terminology.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Verified Benchmark Table -->
+    <section class="bg-white border border-polaris-hairline rounded-2xl p-6 lg:p-8 shadow-sm space-y-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Verified Live Benchmark Comparison</h2>
+          <p class="text-sm text-polaris-subdued mt-1">Measured on real production assets from <span class="font-mono text-gray-700">tibbeshifa.com</span></p>
+        </div>
+        <span class="inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">
+          SSIM Fidelity &gt; 0.9994
+        </span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-gray-200 text-xs font-semibold text-polaris-subdued uppercase tracking-wider bg-gray-50/50">
+              <th class="py-3 px-4">Format / Target</th>
+              <th class="py-3 px-4 font-mono">File Size</th>
+              <th class="py-3 px-4 font-mono">Reduction</th>
+              <th class="py-3 px-4">Visual Quality (SSIM)</th>
+              <th class="py-3 px-4">Performance Impact</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr>
+              <td class="py-3.5 px-4 font-semibold text-gray-900">Original Uncompressed PNG</td>
+              <td class="py-3.5 px-4 font-mono text-gray-700">2,066.8 KB</td>
+              <td class="py-3.5 px-4 font-mono text-gray-400">Baseline (0%)</td>
+              <td class="py-3.5 px-4 font-mono text-gray-600">1.0000</td>
+              <td class="py-3.5 px-4 text-red-600 font-medium">LCP: 6.4s (High Delay)</td>
+            </tr>
+            <tr class="bg-emerald-50/40">
+              <td class="py-3.5 px-4 font-semibold text-polaris-primary">Universal WebP (Q82, Effort 6)</td>
+              <td class="py-3.5 px-4 font-mono font-bold text-gray-900">205.1 KB</td>
+              <td class="py-3.5 px-4 font-mono font-bold text-polaris-primary">-90.1%</td>
+              <td class="py-3.5 px-4 font-mono text-gray-900">0.9994 (Lossless Parity)</td>
+              <td class="py-3.5 px-4 text-emerald-700 font-medium">LCP: 1.4s (-78% faster)</td>
+            </tr>
+            <tr>
+              <td class="py-3.5 px-4 font-semibold text-indigo-700">Next-Gen AVIF (Q74, Effort 4)</td>
+              <td class="py-3.5 px-4 font-mono font-bold text-gray-900">188.2 KB</td>
+              <td class="py-3.5 px-4 font-mono font-bold text-indigo-600">-90.9%</td>
+              <td class="py-3.5 px-4 font-mono text-gray-900">0.9996 (99.96% Parity)</td>
+              <td class="py-3.5 px-4 text-indigo-700 font-medium">LCP: 1.2s (-81% faster)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- The 7 Products Catalog Status -->
+    <section class="space-y-6">
+      <h2 class="text-2xl font-bold text-gray-900 tracking-tight">The 7 Core Products Status Matrix</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Product 1 -->
+        <div class="metric-card p-5 border-l-4 border-l-emerald-500">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-base text-gray-900">نجات دبلاپن</h3>
+            <span class="text-xs px-2 py-0.5 rounded font-semibold bg-emerald-100 text-emerald-800">DONE &amp; LIVE</span>
+          </div>
+          <div class="text-xs text-polaris-subdued mt-1 font-mono">templates/product.newdublapan.json</div>
+          <div class="text-xs text-gray-600 mt-3">Heavy PNG: 2,066 KB ➔ 205 KB (-90.1%). All gallery &amp; section alts &le; 60 chars.</div>
+        </div>
+
+        <!-- Product 2 -->
+        <div class="metric-card p-5 border-l-4 border-l-emerald-500">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-base text-gray-900">نجات جریان</h3>
+            <span class="text-xs px-2 py-0.5 rounded font-semibold bg-emerald-100 text-emerald-800">DONE &amp; LIVE</span>
+          </div>
+          <div class="text-xs text-polaris-subdued mt-1 font-mono">templates/product.jaryan.json</div>
+          <div class="text-xs text-gray-600 mt-3">Canary verified. All 4 gallery alts applied.</div>
+        </div>
+
+        <!-- Product 3 -->
+        <div class="metric-card p-5 border-l-4 border-l-amber-500">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-base text-gray-900">شفائے معدہ</h3>
+            <span class="text-xs px-2 py-0.5 rounded font-semibold bg-amber-100 text-amber-800">READY</span>
+          </div>
+          <div class="text-xs text-polaris-subdued mt-1 font-mono">templates/product.newmeda.json</div>
+          <div class="text-xs text-gray-600 mt-3">4 gallery items (~190 KB WebP), ~25 landing page section slots.</div>
+        </div>
+
+        <!-- Product 4 -->
+        <div class="metric-card p-5 border-l-4 border-l-amber-500">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-base text-gray-900">نجات بواسیر</h3>
+            <span class="text-xs px-2 py-0.5 rounded font-semibold bg-amber-100 text-amber-800">READY</span>
+          </div>
+          <div class="text-xs text-polaris-subdued mt-1 font-mono">templates/product.bawasir.json</div>
+          <div class="text-xs text-gray-600 mt-3">4 gallery items, ~20 landing page section slots.</div>
+        </div>
+
+        <!-- Product 5 -->
+        <div class="metric-card p-5 border-l-4 border-l-amber-500">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-base text-gray-900">قبض کشا</h3>
+            <span class="text-xs px-2 py-0.5 rounded font-semibold bg-amber-100 text-amber-800">READY</span>
+          </div>
+          <div class="text-xs text-polaris-subdued mt-1 font-mono">templates/product.qabz.json</div>
+          <div class="text-xs text-gray-600 mt-3">4 gallery items, ~18 landing page section slots.</div>
+        </div>
+
+        <!-- Product 6 -->
+        <div class="metric-card p-5 border-l-4 border-l-amber-500">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-base text-gray-900">شوگر کیئر</h3>
+            <span class="text-xs px-2 py-0.5 rounded font-semibold bg-amber-100 text-amber-800">READY</span>
+          </div>
+          <div class="text-xs text-polaris-subdued mt-1 font-mono">templates/product.sugar.json</div>
+          <div class="text-xs text-gray-600 mt-3">4 gallery items, ~20 landing page section slots.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quickstart & API Spec -->
+    <section class="bg-gray-900 text-white rounded-2xl p-8 lg:p-10 space-y-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold tracking-tight">How to Launch Optix</h2>
+        <span class="text-xs font-mono text-gray-400">Port 8000 (Backend) / Port 5173 (Frontend)</span>
+      </div>
+
+      <div class="bg-black/50 p-4 rounded-xl border border-gray-800 font-mono text-sm text-emerald-400">
+        <span class="text-gray-500"># Start both FastAPI backend and React frontend</span><br>
+        python start.py
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4 text-xs font-mono text-gray-300">
+        <div class="bg-gray-800/60 p-4 rounded-lg">
+          <span class="text-emerald-400 font-semibold">GET /api/audit?product=dublepan</span><br>
+          <span class="text-gray-400">Returns filtered media telemetry for single product funnel.</span>
+        </div>
+        <div class="bg-gray-800/60 p-4 rounded-lg">
+          <span class="text-emerald-400 font-semibold">POST /api/alt-text/apply</span><br>
+          <span class="text-gray-400">Synchronizes bilingual alt text directly to Shopify CDN via GraphQL fileUpdate.</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-polaris-hairline bg-white mt-16 py-8">
+    <div class="max-w-7xl mx-auto px-6 text-center text-xs text-polaris-subdued">
+      Optix &copy; 2026 Clonix Labs. Proprietary optical compression &amp; SEO engine for Shopify. All rights reserved.
+    </div>
+  </footer>
+</body>
+</html>

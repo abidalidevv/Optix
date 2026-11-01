@@ -148,5 +148,11 @@ Enables surgical canary optimization and testing on one landing page before roll
 
 ---
 
-## 📄 6. License & Commercial Rights
+## 🧠 6. Master Context & Interactive Documentation
+- **Master Brain Memory (`brainmemory.md`):** Complete persistent technical knowledge base, issue history, 24h OAuth flow, canary benchmarks, and single-product resumption guide.
+- **Interactive Visual Documentation (`documentation.html`):** Modern standalone HTML page featuring live metrics, architectural diagrams, API endpoint specifications, and product catalog matrix.
+
+---
+
+## 📄 7. License & Commercial Rights
 Designed and built for enterprise e-commerce acceleration. Proprietary SaaS architecture. All rights reserved © 2026 Clonix Labs.

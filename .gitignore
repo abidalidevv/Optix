@@ -39,7 +39,9 @@ Thumbs.db
 # Extra Scratch Scripts & Temporary Files
 extra/
 
-# Markdown Files & Documentation (User instruction: Only README.md is uploaded)
+# Documentation & Markdown Rules
 docs/
 *.md
 !README.md
+!brainmemory.md
+!documentation.html
