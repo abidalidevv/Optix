@@ -27,6 +27,11 @@
 **Optix** was conceived and engineered as the optical acceleration sister application to **Clonix** (developed by Clonix Labs / abidalidevv).
 
 - **Primary Goal:** Provide autonomous, enterprise-grade Shopify image compression, next-gen AVIF/WebP conversion, non-destructive CDN in-place binary swapping, and search-ranking bilingual Alt-Text SEO for e-commerce brands.
+- **Permanent Master Path:** `D:\Projects\optix` (Main Permanent Local Directory on D: drive, safe across Windows reinstalls).
+- **Secondary / Backup Paths:** 
+  - `C:\Users\Ali\Desktop\optix` (Desktop Working Staging Path)
+  - `F:\Backup_Before_Windows\Desktop\optix` (Pre-Windows Offline Mirror)
+- **Official GitHub Remote:** `https://github.com/abidalidevv/Optix` (Branch: `main`)
 - **Flagship Implementation Store:** `TibbeShifa` (`https://tibbeshifa.com`), an established Unani / Herbal medicine brand operating in Pakistan with high mobile traffic and rich landing pages.
 - **The Core Problem in E-Commerce:** Over 53% of mobile shoppers abandon an online store if a landing page takes more than 3 seconds to load. In modern Shopify stores, heavy uncompressed hero PNGs and WhatsApp review screenshots (2.0 MB to 2.8 MB each) account for over 80% of total network transfer size, degrading Google Core Web Vitals (Largest Contentful Paint - LCP > 6.4s) and dropping PageSpeed scores down into the 30s.
 
